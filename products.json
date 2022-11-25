@@ -1,6 +1,6 @@
 [
     {
-        "categoryId": 1,
+        "brand": "hp",
         "orginalPrice": "$37",
         "resalePrice": "$27",
         "picture": "https://static-01.daraz.com.bd/p/03fa038c693d04d24e3aded56f9cb22c.jpg",
@@ -14,7 +14,7 @@
         "about": "Full fresh condition. Use personally .Bettary quality excelent\r\n"
     },
     {
-        "categoryId": 2,
+        "brand": "dell",
         "orginalPrice": "$30",
         "resalePrice": "$23",
         "picture": "https://www.digitaltrends.com/wp-content/uploads/2022/08/dell-latitude-7330-ul-rear-view-e1659549844358.jpg?p=1",
@@ -28,7 +28,7 @@
         "about": "Full fresh condition. Use personally .Bettary quality excelent\r\n"
     },
     {
-        "categoryId": 3,
+        "brand": "asus",
         "orginalPrice": "$28",
         "resalePrice": "$14",
         "picture": "https://dlcdnwebimgs.asus.com/gain/1184b48b-1b10-462f-a4c1-d43852a64163/",
