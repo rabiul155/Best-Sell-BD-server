@@ -42,14 +42,16 @@ async function run() {
 
 
         app.get('/category', async (req, res) => {
-            const query = {}
-            const category = await categoryCollection.find(query).toArray();
-            res.send(category);
+            const email = req.query.email;
+            console.log(email)
+            const query = { email: email }
+            const product = await categoryCollection.find(query).toArray();
+            res.send(product);
         })
 
         app.get('/myOrder', async (req, res) => {
             const email = req.query.email;
-            console.log(email)
+
             const query = { email: email };
             const order = await bookingCollection.find(query).toArray();
             res.send(order);
