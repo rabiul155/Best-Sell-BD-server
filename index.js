@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express()
 require('dotenv').config();
 
@@ -33,6 +33,8 @@ async function run() {
             res.send(category);
         })
 
+        // add product by seller
+
         app.post('/category', async (req, res) => {
             const product = req.body;
             const result = await categoryCollection.insertOne(product);
@@ -40,13 +42,45 @@ async function run() {
 
         })
 
+        //seller added product to advertise 
+        app.put('/category/:id', async (req, res) => {
+            const advertise = req.body;
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) }
+            const options = { upsert: true };
+            const updatedDoc = {
+                $set: {
+                    advertise: true
+                }
+            }
+            const result = await categoryCollection.updateOne(filter, updatedDoc, options);
+            res.send(result);
 
+        })
+
+        app.get('/advertise', async (req, res) => {
+            const query = { advertise: true };
+
+            const product = await categoryCollection.find(query).toArray();
+            res.send(product)
+        })
+
+        //  send seller adde product 
         app.get('/category', async (req, res) => {
             const email = req.query.email;
             console.log(email)
             const query = { email: email }
             const product = await categoryCollection.find(query).toArray();
             res.send(product);
+        })
+
+        // delete product by selle 
+
+        app.delete('/category/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) }
+            const result = await categoryCollection.deleteOne(query);
+            res.send(result)
         })
 
         app.get('/myOrder', async (req, res) => {
