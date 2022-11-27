@@ -104,11 +104,27 @@ async function run() {
             res.send(user);
         })
 
+        app.get('/users', async (req, res) => {
+            const role = req.query.role;
+            const query = { role: role }
+            console.log(query)
+            const user = await usersCollection.find(query).toArray();
+            res.send(user);
+        })
+
         app.post('/users', async (req, res) => {
             const user = req.body;
             console.log(user);
             const result = await usersCollection.insertOne(user);
             res.send(result);
+        })
+
+        app.delete('/users/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) }
+            const result = await usersCollection.deleteOne(query);
+            res.send(result);
+
         })
 
     }
