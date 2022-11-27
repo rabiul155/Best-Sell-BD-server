@@ -24,6 +24,7 @@ async function run() {
         const categoryCollection = client.db('resale-laptop').collection('allCategory');
         const bookingCollection = client.db('resale-laptop').collection('bookingProduct');
         const usersCollection = client.db('resale-laptop').collection('users');
+        const feedbackCollection = client.db('resale-laptop').collection('feedback');
 
         app.get('/category/:brand', async (req, res) => {
             const brand = req.params.brand;
@@ -140,6 +141,20 @@ async function run() {
             const result = await usersCollection.deleteOne(query);
             res.send(result);
 
+        })
+
+        //get user feedback
+
+        app.get('/feedback', async (req, res) => {
+            const query = {}
+            const data = await feedbackCollection.find(query).toArray()
+            res.send(data);
+        })
+
+        app.post('/feedback', async (req, res) => {
+            const feedback = req.body;
+            const result = await feedbackCollection.insertOne(feedback);
+            res.send(feedback);
         })
 
     }
