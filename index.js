@@ -93,7 +93,7 @@ async function run() {
             res.send(result);
         })
 
-        app.get('/advertise', verifyJWT, async (req, res) => {
+        app.get('/advertise', async (req, res) => {
             const query = { advertise: true };
 
             const product = await categoryCollection.find(query).toArray();
