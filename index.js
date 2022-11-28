@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express()
 require('dotenv').config();
@@ -10,6 +11,23 @@ const port = process.env.PORT || 5000
 
 app.use(cors())
 app.use(express.json())
+
+
+const verifyJWT = (req, res, next) => {
+    const header = req.headers.authorization;
+
+    if (!header) {
+        return res.status(401).send('unauthorized user')
+    }
+    const token = header.split(' ')[1];
+    jwt.verify(token, process.env.ACCESS_TOKEN, function (err, decoded) {
+        if (err) {
+            return res.status(403).send({ message: 'authorization restricted' })
+        }
+        req.decoded = decoded;
+        next();
+    })
+}
 
 
 
@@ -75,17 +93,22 @@ async function run() {
             res.send(result);
         })
 
-        app.get('/advertise', async (req, res) => {
+        app.get('/advertise', verifyJWT, async (req, res) => {
             const query = { advertise: true };
 
             const product = await categoryCollection.find(query).toArray();
             res.send(product)
         })
 
-        //  send seller adde product 
-        app.get('/category', async (req, res) => {
+        //  seller my product 
+
+        app.get('/category', verifyJWT, async (req, res) => {
             const email = req.query.email;
-            console.log(email)
+            const decodedEmail = req.decoded.email;
+            console.log(decodedEmail);
+            if (email !== decodedEmail) {
+                return res.status(403).send('unauthorized access')
+            }
             const query = { email: email }
             const product = await categoryCollection.find(query).toArray();
             res.send(product);
@@ -100,9 +123,13 @@ async function run() {
             res.send(result)
         })
 
-        app.get('/myOrder', async (req, res) => {
+        app.get('/myOrder', verifyJWT, async (req, res) => {
             const email = req.query.email;
-
+            const decodedEmail = req.decoded.email;
+            console.log(decodedEmail);
+            if (email !== decodedEmail) {
+                return res.status(403).send('unauthorized access')
+            }
             const query = { email: email };
             const order = await bookingCollection.find(query).toArray();
             res.send(order);
@@ -171,7 +198,27 @@ async function run() {
             res.send(result);
         })
 
+
+
+
+        app.get('/jwt', async (req, res) => {
+            const email = req.query.email;
+
+            const query = { email: email }
+            const user = await usersCollection.findOne(query)
+
+            if (user) {
+                const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, { expiresIn: '12h' })
+                return res.send({ accessToken: token })
+            }
+
+            res.status(403).send({ accessToken: '' });
+        })
+
     }
+
+
+
 
     finally {
 
