@@ -44,6 +44,7 @@ async function run() {
         const usersCollection = client.db('resale-laptop').collection('users');
         const feedbackCollection = client.db('resale-laptop').collection('feedback');
         const wishlistCollection = client.db('resale-laptop').collection('wishlist');
+        const reviewCollection = client.db('resale-laptop').collection('review');
 
         app.get('/category/:brand', async (req, res) => {
             const brand = req.params.brand;
@@ -197,6 +198,83 @@ async function run() {
             const result = await wishlistCollection.insertOne(porduct);
             res.send(result);
         })
+
+
+        app.delete('/deleteCartProduct', async (req, res) => {
+            const _id = req.query._id;
+            const email = req.query.email;
+
+            const query = {
+                _id: ObjectId(_id),
+                email: email
+            }
+            const result = await bookingCollection.deleteOne(query);
+            res.send(result);
+        })
+
+        app.put('/updateCart', async (req, res) => {
+            const _id = req.query._id;
+            const email = req.query.email;
+            const query = {
+                _id: ObjectId(_id),
+                email: email
+            }
+            const quntity = req.body;
+            console.log(quntity.quantity)
+
+            const options = { upsert: true };
+
+            const updateDoc = {
+                $set: {
+                    quantity: quntity.quantity
+                },
+            };
+
+            const result = await bookingCollection.updateOne(query, updateDoc, options);
+            res.send(result);
+
+
+
+        })
+
+        app.get('/productDetails/:_id', async (req, res) => {
+            const id = req.params._id;
+            const query = { _id: ObjectId(id) }
+            const result = await categoryCollection.findOne(query);
+            res.send(result);
+        })
+
+        app.get('/review/:_id', async (req, res) => {
+            const _id = req.params._id;
+            const query = { productId: _id }
+            const review = await reviewCollection.find(query).toArray();
+            res.send(review);
+        })
+
+
+        app.post('/review', async (req, res) => {
+            const review = req.body;
+
+            const result = await reviewCollection.insertOne(review)
+            res.send(result);
+        })
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
