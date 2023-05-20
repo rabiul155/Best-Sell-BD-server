@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
+const SSLCommerzPayment = require('sslcommerz-lts')
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express()
 require('dotenv').config();
@@ -8,9 +9,13 @@ require('dotenv').config();
 const port = process.env.PORT || 5000
 
 // midleware 
-
 app.use(cors())
 app.use(express.json())
+
+
+const store_id = process.env.SSL_ID
+const store_passwd = process.env.SSL_PASSWORD
+const is_live = false //true for live, false for sandbox
 
 
 const verifyJWT = (req, res, next) => {
@@ -46,9 +51,16 @@ async function run() {
         const wishlistCollection = client.db('resale-laptop').collection('wishlist');
         const reviewCollection = client.db('resale-laptop').collection('review');
 
+
+        app.get('/allProducts', async (req, res) => {
+            const query = {}
+            const category = await categoryCollection.find(query).toArray();
+            res.send(category);
+        })
+
+
         app.get('/category/:brand', async (req, res) => {
             const brand = req.params.brand;
-            console.log(brand);
             const query = { brand: brand }
             const category = await categoryCollection.find(query).toArray();
             res.send(category);
@@ -89,14 +101,12 @@ async function run() {
                     verify: true
                 }
             }
-
             const result = await categoryCollection.updateOne(fileter, updatedDoc, option);
             res.send(result);
         })
 
         app.get('/advertise', async (req, res) => {
             const query = { advertise: true };
-
             const product = await categoryCollection.find(query).toArray();
             res.send(product)
         })
@@ -106,7 +116,6 @@ async function run() {
         app.get('/category', verifyJWT, async (req, res) => {
             const email = req.query.email;
             const decodedEmail = req.decoded.email;
-            console.log(decodedEmail);
             if (email !== decodedEmail) {
                 return res.status(403).send('unauthorized access')
             }
@@ -251,6 +260,15 @@ async function run() {
             res.send(review);
         })
 
+        app.delete('/deleteReview/:_id', async (req, res) => {
+            const _id = req.params._id;
+            console.log(_id);
+            const query = { _id: ObjectId(_id) }
+            const result = await reviewCollection.deleteOne(query)
+            res.send(result)
+
+        })
+
 
         app.post('/review', async (req, res) => {
             const review = req.body;
@@ -259,6 +277,68 @@ async function run() {
             res.send(result);
         })
 
+
+        app.post('/payment', async (req, res) => {
+            const order = req.body
+            console.log(order);
+            const data = {
+                total_amount: order.price,
+                currency: 'BDT',
+                tran_id: new ObjectId().toString(), // use unique tran_id for each api call
+                success_url: `https://78-laptop-resalse-server.vercel.app/payment/success?email=${order.email}`,
+                fail_url: 'http://localhost:3030/fail',
+                cancel_url: 'http://localhost:3030/cancel',
+                ipn_url: 'http://localhost:3030/ipn',
+                shipping_method: 'Courier',
+                product_name: 'Computer.',
+                product_category: 'Electronic',
+                product_profile: 'general',
+                cus_name: order.name,
+                cus_email: order.email,
+                cus_add1: order.location,
+                cus_add2: 'Dhaka',
+                cus_city: 'Dhaka',
+                cus_state: 'Dhaka',
+                cus_postcode: '1000',
+                cus_country: 'Bangladesh',
+                cus_phone: order.phone,
+                cus_fax: '01711111111',
+                ship_name: 'Customer Name',
+                ship_add1: 'Dhaka',
+                ship_add2: 'Dhaka',
+                ship_city: 'Dhaka',
+                ship_state: 'Dhaka',
+                ship_postcode: 1000,
+                ship_country: 'Bangladesh',
+            };
+
+            const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live)
+            sslcz.init(data).then(apiResponse => {
+                // Redirect the user to payment gateway
+                let GatewayPageURL = apiResponse.GatewayPageURL
+                res.send({ url: GatewayPageURL })
+
+            });
+
+        })
+
+        app.post('/payment/success', async (req, res) => {
+            const email = req.query.email;
+            const query = { email: email }
+            const options = { upsert: true };
+
+            const updateDoc = {
+                $set: {
+                    status: 'paid'
+                },
+            };
+            const result = await bookingCollection.updateMany(query, updateDoc, options);
+
+            if (result.modifiedCount > 0) {
+                res.redirect('https://laptop-resale.web.app/payment/success')
+            }
+
+        })
 
 
 
@@ -286,7 +366,7 @@ async function run() {
             const user = await usersCollection.findOne(query)
 
             if (user) {
-                const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, { expiresIn: '12h' })
+                const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, { expiresIn: '120h' })
                 return res.send({ accessToken: token })
             }
 
